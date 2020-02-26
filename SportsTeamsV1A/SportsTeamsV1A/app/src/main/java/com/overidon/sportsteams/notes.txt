@@ -1,0 +1,57 @@
+ jsonString = {
+   "name" : "Ronaldo",
+   "sport" : "soccer",
+   "age" : 25,
+   "id" : 121,
+   "lastScores" : [ 2, 1, 3, 5, 0, 0, 1, 1 ]
+ }
+
+ It's simple, has 5 attributes, two of which are String and the other two are numeric. One attribute, lastScore is a JSON array.
+
+
+String to JSON Object using Gson
+The Gson is an open-source library to deal with JSON in Java programs.
+It comes from none other than Google, which is also behind Guava,
+ a common purpose library for Java programmers.
+ You can convert JSON String to Java object in just 2 lines by using Gson as shown below :
+
+Gson g = new Gson();
+Player p = g.fromJson(jsonString, Player.class)
+
+You can also convert a Java object to JSON by using toJson() method as shown below
+
+String str = g.toJson(p);
+
+The good thing about Gson is that it's feature-rich and comes from Google,
+which is known for performance.
+ Btw, if you are not very familiar with JSON format itself,
+ I would suggest joining Introduction to JSON on Udemy to learn more.
+ It's a must that you know some basics of JSON before encoding and decoding Java objects to JSON.
+
+
+
+
+
+Your result contains a JSONArray with two indexes (0,1). Run the loop twice or size of JSONArray. Get the value against the key products_id.
+
+JSONArray array = new JSONArray(yourStringData);
+for(int i = 0; i<array.length() ; i++){
+   String productInfo = array.get(i);
+
+   JSONObject object = new JSONObject(productInfo );
+   String myRequiredData = object.get("products_id");
+ }
+
+
+
+
+
+ The easiest way is to serialize your JSONObject to a json string using toString(), then parsing that json string into a JsonObject:
+
+     org.json.JSONObject object = <your defined object>;
+     JsonParser jsonParser = new JsonParser();
+     JsonObject gsonObject = (JsonObject)jsonParser.parse(object.toString());
+ Note that serializing and deserializing an object can be an expensive operation.
+ If you have to do this a lot in your code (inside loops), it can affect your performance.
+
+
