@@ -9,13 +9,17 @@ package com.overidon.sportsteams;
  */
 
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.recyclerview.widget.LinearLayoutManager;
+import androidx.recyclerview.widget.RecyclerView;
 
+import android.content.Context;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.os.AsyncTask;
 import android.os.Bundle;
 import android.view.KeyEvent;
 import android.view.inputmethod.EditorInfo;
+import android.view.inputmethod.InputMethodManager;
 import android.widget.EditText;
 import android.widget.ImageView;
 import android.widget.TextView;
@@ -35,13 +39,20 @@ import org.json.JSONArray;
 import org.json.JSONObject;
 
 import java.io.InputStream;
+import java.util.ArrayList;
 
 
 public class MainActivity extends AppCompatActivity {
 
     private static final String TAG = "TAG: ";
 
-    TextView rawDataTV;
+
+
+    private ArrayList<String> mNames = new ArrayList<>();
+    private ArrayList<String> mImageUrls = new ArrayList<>();
+
+    // this will hold the team objects...
+    private ArrayList<SportsTeam> teamList = new ArrayList<>();
 
     // This is the free API key... I would of course use a Patreon API Key if the users of this app scaled.
     final String APIKEY = "1";
@@ -51,9 +62,7 @@ public class MainActivity extends AppCompatActivity {
     private RequestQueue mRequestQueue;
     private StringRequest mStringRequest;
 
-    private SportsTeam team0;
 
-    private ImageView team_0_badge_view;
 
     private EditText dataEntry;
 
@@ -64,13 +73,14 @@ public class MainActivity extends AppCompatActivity {
 
         dataEntry = findViewById(R.id.data_entry);
 
-        team_0_badge_view = findViewById(R.id.team_0_badge);
-
-        rawDataTV =  findViewById(R.id.raw_data);
 
         Log.d(TAG, "Main Activity was Created... ");
 
+
         dataEntry.setImeOptions(EditorInfo.IME_ACTION_DONE);
+
+        InputMethodManager imm = (InputMethodManager)getSystemService(Context.INPUT_METHOD_SERVICE);
+        imm.hideSoftInputFromWindow(dataEntry.getWindowToken(), 0);
 
         dataEntry.setOnEditorActionListener(new TextView.OnEditorActionListener() {
             @Override
@@ -85,6 +95,11 @@ public class MainActivity extends AppCompatActivity {
                     // attempt to acquire raw JSON data...
                     acquireTeams();
 
+
+
+                    InputMethodManager imm = (InputMethodManager)getSystemService(Context.INPUT_METHOD_SERVICE);
+                    imm.hideSoftInputFromWindow(dataEntry.getWindowToken(), 0);
+
                     // Your action on done
                     return true;
                 }
@@ -96,11 +111,19 @@ public class MainActivity extends AppCompatActivity {
 
 
 
+
+
+
+        //initImageBitmaps();
+
+
     // end of the onCreate method
     }
 
 
     private void acquireTeams() {
+
+
 
         //there must be a request Queue ...
         mRequestQueue = Volley.newRequestQueue(this);
@@ -111,9 +134,10 @@ public class MainActivity extends AppCompatActivity {
                     @Override
                     public void onResponse(JSONObject response) {
 
-                        // rawDataTV.setText("Response: " + response.toString());
-
                         try {
+
+                            teamList.clear();
+
 
                             // store the teams in a JSON array...
                             JSONArray teams = response.getJSONArray("teams");
@@ -121,37 +145,29 @@ public class MainActivity extends AppCompatActivity {
                             // loop through the JSON Array to acquire the teams..
                             for (int i = 0; i < teams.length(); i++) {
 
-
                                 String teamString = teams.get(i).toString();
 
-
                                 Gson g = new Gson();
-                                team0 = g.fromJson(teamString, SportsTeam.class);
-                                rawDataTV.setText("TEAM INFO: " + i + " #### " + team0);
+                                SportsTeam team0 = g.fromJson(teamString, SportsTeam.class);
 
+                                teamList.add(team0);
 
-
-                                Log.d(TAG, " " );
-                                Log.d(TAG, "??? : There is a team with an array index of: " + i);
-                                Log.d(TAG, "TEAM " + i + " : " + teamString);
-                                Log.d(TAG, "TEAM INFO: " + i + " #### " + team0 );
-                                Log.d(TAG, "IMAGE URL for badge: " + team0.strTeamBadge);
-
-
-
-                                new DownloadImageTask(team_0_badge_view).execute(team0.strTeamBadge);
-
-                                // TODO - Early break only for expimentals
-                                break;
+                            // end of the for loop for the JSON Array
                             }
+
+
+                            mImageUrls.clear();
+                            mNames.clear();
+
+                            // now that the for loop is completed inside the try
+                            // it is safe to initialize the sportsTeams
+                            // this is better than doing another request or ASync
+                            initSportsTeams();
 
                         } catch (Exception e) {
                             Log.d(TAG, "### Error Extracting team data ...");
                             Log.d(TAG, "ERROR DETAILS: "+ e);
                         }
-
-
-
 
 
                     }
@@ -192,7 +208,7 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
-
+    /*
     private void sendAndRequestResponse() {
 
         //RequestQueue initialized
@@ -217,6 +233,44 @@ public class MainActivity extends AppCompatActivity {
         });
 
         mRequestQueue.add(mStringRequest);
+    }
+    */
+
+
+
+    private void initSportsTeams() {
+        Log.d(TAG, "initImageBitmaps: preparing teams.");
+
+        for (int i = 0; i < teamList.size(); i++) {
+
+            SportsTeam S = teamList.get(i);
+
+            mImageUrls.add(S.strTeamBadge);
+            mNames.add(S.strAlternate);
+
+        }
+
+        Log.d(TAG, "the size of the teamList is: " + teamList.size());
+
+        initRecyclerView();
+
+    // end of the initSportsTeams method
+    }
+
+
+
+
+    private void initRecyclerView() {
+
+        Log.d(TAG, "initRecyclerView: init recyclerview. ");
+        RecyclerView recyclerView = findViewById(R.id.recycler_view);
+
+        RecyclerViewAdapter adapter = new RecyclerViewAdapter(this, mNames, mImageUrls);
+
+        recyclerView.setAdapter(adapter);
+
+        recyclerView.setLayoutManager(new LinearLayoutManager(this));
+
     }
 
 // end of the MainActivity class
